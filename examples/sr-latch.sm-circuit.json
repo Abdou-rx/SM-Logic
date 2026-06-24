@@ -1,0 +1,17 @@
+{
+  "name": "sr_latch",
+  "description": "Set-Reset latch using 2 NOR + 2 AND gates (SM-specific 4-gate variant)",
+  "version": "1.0.0",
+  "inputs": ["SET", "RESET"],
+  "outputs": ["Q", "Q_bar"],
+  "gates": [
+    { "id": "nor1", "type": "nor", "inputs": ["SET", "Q_bar_fb"], "output": "Q" },
+    { "id": "nor2", "type": "nor", "inputs": ["RESET", "Q"], "output": "Q_bar" },
+    { "id": "and1", "type": "and", "inputs": ["Q"], "output": "Q_bar_fb" },
+    { "id": "and2", "type": "and", "inputs": ["Q_bar"], "output": "Q_fb" }
+  ],
+  "feedback": {
+    "Q": "Q_fb",
+    "Q_bar": "Q_bar_fb"
+  }
+}

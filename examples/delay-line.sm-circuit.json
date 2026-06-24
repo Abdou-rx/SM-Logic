@@ -1,0 +1,10 @@
+{
+  "name": "delay_line",
+  "description": "5-tick delay line using Timer",
+  "version": "1.0.0",
+  "inputs": ["IN"],
+  "outputs": ["OUT"],
+  "gates": [
+    { "id": "timer1", "type": "timer", "delay": 5, "inputs": ["IN"], "output": "OUT" }
+  ]
+}

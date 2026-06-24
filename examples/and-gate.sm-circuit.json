@@ -1,0 +1,15 @@
+{
+  "name": "and_gate",
+  "description": "Basic 2-input AND gate example",
+  "version": "1.0.0",
+  "inputs": ["A", "B"],
+  "outputs": ["Y"],
+  "gates": [
+    {
+      "id": "and1",
+      "type": "and",
+      "inputs": ["A", "B"],
+      "output": "Y"
+    }
+  ]
+}

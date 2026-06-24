@@ -1,0 +1,11 @@
+{
+  "name": "half_adder",
+  "description": "1-bit half adder: Sum = A XOR B, Carry = A AND B",
+  "version": "1.0.0",
+  "inputs": ["A", "B"],
+  "outputs": ["Sum", "Carry"],
+  "gates": [
+    { "id": "xor1", "type": "xor", "inputs": ["A", "B"], "output": "Sum" },
+    { "id": "and1", "type": "and", "inputs": ["A", "B"], "output": "Carry" }
+  ]
+}

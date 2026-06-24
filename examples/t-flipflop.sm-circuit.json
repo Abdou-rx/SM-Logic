@@ -1,0 +1,19 @@
+{
+  "name": "t_flipflop",
+  "description": "Toggle flip-flop: each pulse on T toggles Q output",
+  "version": "1.0.0",
+  "inputs": ["T"],
+  "outputs": ["Q"],
+  "gates": [
+    { "id": "or1", "type": "or", "inputs": ["T"], "output": "or1_out" },
+    { "id": "nand1", "type": "nand", "inputs": ["or1_out"], "output": "nand1_out" },
+    { "id": "and1", "type": "and", "inputs": ["nand1_out"], "output": "and1_out" },
+    { "id": "xor1", "type": "xor", "inputs": ["and1_out", "xor3_out"], "output": "xor1_out" },
+    { "id": "xor2", "type": "xor", "inputs": ["xor1_out", "and1_out"], "output": "xor2_out" },
+    { "id": "xor3", "type": "xor", "inputs": ["xor2_out", "and1_out"], "output": "xor3_out" },
+    { "id": "nor1", "type": "nor", "inputs": ["xor1_out"], "output": "Q" }
+  ],
+  "feedback": {
+    "xor1_out": "xor3_out"
+  }
+}
