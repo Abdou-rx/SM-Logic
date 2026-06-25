@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { BlueprintBuilder } from '../src/blueprint/builder.ts';
 import { Placer } from '../src/blueprint/placer.ts';
+import { BlueprintBuilder } from '../src/blueprint/builder.ts';
 import { BlueprintWriter } from '../src/blueprint/writer.ts';
 import { createHalfAdder, createNotGate } from '../src/core/subcircuits.ts';
 import { CircuitBuilder } from '../src/core/circuit-builder.ts';
-import { writeFileSync, readFileSync, unlinkSync, mkdirSync } from 'node:fs';
+import { readFileSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -56,8 +56,10 @@ describe('BlueprintBuilder', () => {
     const body = blueprint.bodies[0]!;
     expect(body.childs.length).toBeGreaterThan(0);
 
-    // Check that child IDs are unique
-    const ids = body.childs.map((c) => c.id);
+    // Check that controller IDs are unique (for actual components, not filler)
+    const ids = body.childs
+      .map((c) => c.controller?.id)
+      .filter((id): id is number => id !== undefined && id > 0);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -94,7 +96,7 @@ describe('BlueprintBuilder', () => {
 });
 
 describe('BlueprintWriter', () => {
-  it('writes blueprint to file and can be read back', () => {
+  it('writes blueprint to file and can be read back', async () => {
     const circuit = new CircuitBuilder('write_test')
       .input('A').output('OUT')
       .gate('not1', 'nand', ['A', 'A'], 'OUT')
@@ -109,7 +111,7 @@ describe('BlueprintWriter', () => {
     const filePath = join(tmpDir, 'test.blueprint.json');
 
     try {
-      BlueprintWriter.writeToFile(blueprint, filePath);
+      await BlueprintWriter.write(blueprint, filePath);
 
       const content = readFileSync(filePath, 'utf-8');
       const parsed = JSON.parse(content);

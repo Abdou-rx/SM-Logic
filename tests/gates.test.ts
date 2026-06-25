@@ -10,9 +10,9 @@ describe('evaluateGate', () => {
     });
 
     it('outputs false when not all inputs are HIGH', () => {
-      expect(evaluateGate('and', 0, 2)).toBe(false);
-      expect(evaluateGate('and', 1, 2)).toBe(false);
-      expect(evaluateGate('and', 0, 1)).toBe(false);
+      expect(evaluateGate('and', 2, 0)).toBe(false);
+      expect(evaluateGate('and', 2, 1)).toBe(false);
+      expect(evaluateGate('and', 1, 0)).toBe(false);
     });
 
     it('outputs false with 0 inputs', () => {
@@ -22,14 +22,14 @@ describe('evaluateGate', () => {
 
   describe('OR gate', () => {
     it('outputs true when any input is HIGH', () => {
-      expect(evaluateGate('or', 1, 2)).toBe(true);
+      expect(evaluateGate('or', 2, 1)).toBe(true);
       expect(evaluateGate('or', 2, 2)).toBe(true);
       expect(evaluateGate('or', 1, 1)).toBe(true);
     });
 
     it('outputs false when all inputs are LOW', () => {
-      expect(evaluateGate('or', 0, 2)).toBe(false);
-      expect(evaluateGate('or', 0, 1)).toBe(false);
+      expect(evaluateGate('or', 2, 0)).toBe(false);
+      expect(evaluateGate('or', 1, 0)).toBe(false);
     });
 
     it('outputs false with 0 inputs', () => {
@@ -39,13 +39,13 @@ describe('evaluateGate', () => {
 
   describe('XOR gate', () => {
     it('outputs true for odd number of activated inputs', () => {
-      expect(evaluateGate('xor', 1, 2)).toBe(true);
+      expect(evaluateGate('xor', 2, 1)).toBe(true);
       expect(evaluateGate('xor', 1, 1)).toBe(true);
-      expect(evaluateGate('xor', 3, 4)).toBe(true);
+      expect(evaluateGate('xor', 4, 3)).toBe(true);
     });
 
     it('outputs false for even number of activated inputs', () => {
-      expect(evaluateGate('xor', 0, 2)).toBe(false);
+      expect(evaluateGate('xor', 2, 0)).toBe(false);
       expect(evaluateGate('xor', 2, 2)).toBe(false);
       expect(evaluateGate('xor', 0, 0)).toBe(false);
     });
@@ -53,8 +53,8 @@ describe('evaluateGate', () => {
 
   describe('NAND gate', () => {
     it('outputs true when not all inputs are HIGH', () => {
-      expect(evaluateGate('nand', 0, 2)).toBe(true);
-      expect(evaluateGate('nand', 1, 2)).toBe(true);
+      expect(evaluateGate('nand', 2, 0)).toBe(true);
+      expect(evaluateGate('nand', 2, 1)).toBe(true);
     });
 
     it('outputs false when all inputs are HIGH', () => {
@@ -69,12 +69,12 @@ describe('evaluateGate', () => {
 
   describe('NOR gate', () => {
     it('outputs true when all inputs are LOW', () => {
-      expect(evaluateGate('nor', 0, 2)).toBe(true);
-      expect(evaluateGate('nor', 0, 1)).toBe(true);
+      expect(evaluateGate('nor', 2, 0)).toBe(true);
+      expect(evaluateGate('nor', 1, 0)).toBe(true);
     });
 
     it('outputs false when any input is HIGH', () => {
-      expect(evaluateGate('nor', 1, 2)).toBe(false);
+      expect(evaluateGate('nor', 2, 1)).toBe(false);
       expect(evaluateGate('nor', 2, 2)).toBe(false);
     });
 
@@ -85,12 +85,12 @@ describe('evaluateGate', () => {
 
   describe('XNOR gate', () => {
     it('outputs true for even number of activated inputs', () => {
-      expect(evaluateGate('xnor', 0, 2)).toBe(true);
+      expect(evaluateGate('xnor', 2, 0)).toBe(true);
       expect(evaluateGate('xnor', 2, 2)).toBe(true);
     });
 
     it('outputs false for odd number of activated inputs', () => {
-      expect(evaluateGate('xnor', 1, 2)).toBe(false);
+      expect(evaluateGate('xnor', 2, 1)).toBe(false);
       expect(evaluateGate('xnor', 1, 1)).toBe(false);
     });
 

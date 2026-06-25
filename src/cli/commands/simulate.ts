@@ -21,7 +21,7 @@ export function createSimulateCommand(): Command {
     .description("Run tick-by-tick simulation of a circuit")
     .argument("<file>", "Circuit file (.sm-circuit.json)")
     .option("-t, --ticks <number>", "Number of ticks to simulate", "20")
-    .option("-i, --input <pairs...>", "Input assignments: A=1,B=0")
+    .option("-i, --input <pairs>", "Input assignments: A=1,B=0", [])
     .option("-o, --output <file>", "Export waveform as VCD file")
     .option("-w, --watch", "Interactive watch mode")
     .action(async (filePath: string, options: SimulateOptions) => {
@@ -64,10 +64,13 @@ async function runSimulate(filePath: string, options: SimulateOptions): Promise<
     process.exit(1);
   }
 
-  // Parse input assignments
+  // Parse input assignments (support both comma-separated and space-separated)
   const inputMap: Record<string, boolean> = {};
   if (options.input?.length) {
-    for (const pair of options.input) {
+    // Normalize to array, then flatten comma-separated entries
+    const raw = Array.isArray(options.input) ? options.input : [options.input];
+    const pairs = raw.flatMap((p) => p.split(","));
+    for (const pair of pairs) {
       const eqIdx = pair.indexOf("=");
       if (eqIdx < 0) {
         warn(`Ignoring invalid input pair: ${pair}`);

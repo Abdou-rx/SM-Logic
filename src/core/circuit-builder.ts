@@ -128,6 +128,16 @@ export class CircuitBuilder {
       throw new Error(`Circuit "${this._name}" must have at least one input`);
     }
 
+    // Validate all outputs are produced by at least one gate
+    const gateOutputs = new Set(this._gates.map((g) => g.output));
+    for (const outName of this._outputs) {
+      if (!gateOutputs.has(outName)) {
+        throw new Error(
+          `Output "${outName}" is not produced by any gate in circuit "${this._name}"`,
+        );
+      }
+    }
+
     // Validate all gate inputs reference known signals
     const knownSignals = new Set([
       ...this._inputs,
@@ -140,7 +150,7 @@ export class CircuitBuilder {
       for (const input of gate.inputs) {
         if (!knownSignals.has(input)) {
           throw new Error(
-            `Gate "${gate.id}" references unknown input signal "${input}"`,
+            `Gate "${gate.id}" references unknown input signal "${input}" in circuit "${this._name}"`,
           );
         }
       }

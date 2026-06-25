@@ -6,7 +6,7 @@ import { CircuitJsonParser } from "../../parser/circuit-json.js";
 import { TruthTableGenerator } from "../../verifier/truth-table-gen.js";
 import { formatTruthTableReport } from "../../verifier/reporter.js";
 import { success, warn, error, header, kv, info } from "../utils/output.js";
-import { formatTruthTable } from "../../core/gates.js";
+import { formatGateTruthTable } from "../../core/gates.js";
 
 interface TruthTableOptions {
   gate?: string;
@@ -48,7 +48,7 @@ async function runTruthTable(
     kv("Rows", 1 << inputCount);
 
     console.log();
-    console.log(formatTruthTable(gateType, inputCount));
+    console.log(formatGateTruthTable(gateType, inputCount));
     success("Done");
     return;
   }

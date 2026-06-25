@@ -60,6 +60,8 @@ export interface SMBlueprintBody {
 /** Top-level blueprint structure (version 4) */
 export interface SMBlueprint {
   readonly version: 4;
+  readonly name?: string;
+  readonly blueprintId?: string;
   readonly bodies: readonly SMBlueprintBody[];
   readonly joints?: unknown[];
   readonly dependencies?: readonly string[];

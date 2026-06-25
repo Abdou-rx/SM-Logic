@@ -2,12 +2,12 @@
  * BlueprintBuilder — constructs a complete SMBlueprint from a CircuitDefinition.
  *
  * Workflow:
- *  1. SimpleGridPlacer assigns (x,y,z) positions and controller IDs.
- *  2. For each placed component, an SMBlueprintItem is created with the
+ * 1. SimpleGridPlacer assigns (x,y,z) positions and controller IDs.
+ * 2. For each placed component, an SMBlueprintItem is created with the
  *     correct shapeId and controller data (mode, wiring references).
- *  3. Optionally, input buttons and output plastic blocks are added.
- *  4. Optionally, empty grid positions are filled with plastic blocks.
- *  5. Everything is wrapped in an SMBlueprint version-4 envelope.
+ * 3. Input buttons and output LEDs are added.
+ * 4. Optionally, empty grid positions are filled with plastic blocks.
+ * 5. Everything is wrapped in an SMBlueprint version-4 envelope.
  */
 import type { CircuitDefinition } from "../types/circuit.js";
 import type { LogicGateType, GateConfig } from "../types/gate.js";
@@ -18,7 +18,7 @@ import type {
   SMController,
   SMControllerItem,
   BlueprintOptions,
-  GatePlacement,
+  PlacedComponent,
   SMVector,
 } from "../types/blueprint.js";
 import { DEFAULT_BP_OPTIONS } from "../types/blueprint.js";
@@ -29,6 +29,7 @@ import {
 } from "../core/constants.js";
 import { SimpleGridPlacer } from "./placer.js";
 import { BlueprintWriter } from "./writer.js";
+import { randomUUID } from "node:crypto";
 
 /** Statistics about the generated blueprint */
 export interface BlueprintStats {
@@ -43,7 +44,7 @@ export interface BlueprintStats {
 export class BlueprintBuilder {
   private readonly circuit: CircuitDefinition;
   private readonly options: BlueprintOptions;
-  private placements: GatePlacement[] = [];
+  private placements: readonly PlacedComponent[] = [];
 
   constructor(circuit: CircuitDefinition, options?: Partial<BlueprintOptions>) {
     this.circuit = circuit;
@@ -56,7 +57,8 @@ export class BlueprintBuilder {
   build(): SMBlueprint {
     // 1. Place components on a grid
     const placer = new SimpleGridPlacer(this.circuit, this.options.gateSpacing);
-    this.placements = placer.place();
+    const result = placer.place();
+    this.placements = result.placements;
 
     // 2. Build signal → controllerId map for wiring
     const signalToControllerId = buildSignalMap(this.circuit, this.placements);
@@ -85,10 +87,20 @@ export class BlueprintBuilder {
 
     return {
       version: 4,
+      name: this.circuit.name,
+      blueprintId: randomUUID(),
       bodies: [body],
       joints: [],
       dependencies: [],
     };
+  }
+
+  /**
+   * Build the blueprint and return as a JSON string.
+   */
+  toString(): string {
+    const blueprint = this.build();
+    return BlueprintWriter.writeString(blueprint);
   }
 
   /**
@@ -128,25 +140,24 @@ export class BlueprintBuilder {
   // ---------------------------------------------------------------------------
 
   private createItem(
-    placement: GatePlacement,
+    placement: PlacedComponent,
     signalMap: ReadonlyMap<string, number>,
   ): SMBlueprintItem {
-    const { gateId, position, controllerId } = placement;
+    const { childId, position, controllerId } = placement;
 
     // Check if this placement is an input port
-    if (this.circuit.inputs.includes(gateId)) {
-      return this.createInputButton(gateId, position, controllerId);
+    if (placement.isInput) {
+      return this.createInputButton(childId, position, controllerId);
     }
 
     // Check if this placement is an output port
-    if (this.circuit.outputs.includes(gateId)) {
-      return this.createOutputBlock(gateId, position, controllerId, signalMap);
+    if (placement.isOutput) {
+      return this.createOutputLED(childId, position, controllerId, signalMap);
     }
 
     // Otherwise it is a gate
-    const gate = this.circuit.gates.find((g) => g.id === gateId);
+    const gate = this.circuit.gates.find((g) => g.id === childId);
     if (gate === undefined) {
-      // Should not happen with a valid circuit, but produce a plastic block
       return makePlasticBlock(position, controllerId);
     }
 
@@ -174,13 +185,12 @@ export class BlueprintBuilder {
     };
   }
 
-  private createOutputBlock(
+  private createOutputLED(
     gateId: string,
     position: SMVector,
     controllerId: number,
     signalMap: ReadonlyMap<string, number>,
   ): SMBlueprintItem {
-    // Find which gate produces this output signal
     const sourceGate = this.circuit.gates.find((g) => g.output === gateId);
     const controllers: SMControllerItem[] = [];
 
@@ -198,9 +208,7 @@ export class BlueprintBuilder {
 
     return {
       pos: position,
-      shapeId: this.options.addPortDevices
-        ? SHAPE_IDS.PLASTIC_BLOCK
-        : SHAPE_IDS.PLASTIC_BLOCK,
+      shapeId: "020fc24a-61b5-4cf3-bd4f-e876d89bd905", // LED shape ID
       xaxis: DEFAULT_DIRECTIONS.X_AXIS,
       zaxis: DEFAULT_DIRECTIONS.Z_AXIS,
       controller,
@@ -217,7 +225,6 @@ export class BlueprintBuilder {
     const isTimer = gate.type === "timer";
     const shapeId = isTimer ? SHAPE_IDS.TIMER : SHAPE_IDS.LOGIC_GATE;
 
-    // Build wiring: for each input signal, find the source controller ID
     const controllers: SMControllerItem[] = [];
     for (const inputSignal of gate.inputs) {
       const srcCid = signalMap.get(inputSignal);
@@ -238,7 +245,6 @@ export class BlueprintBuilder {
           mode: GATE_MODE_MAP[gate.type as LogicGateType],
         };
 
-
     return {
       pos: position,
       shapeId,
@@ -254,43 +260,26 @@ export class BlueprintBuilder {
 // Module-private helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Build a map from signal name → controller ID.
- *
- * Sources:
- *  - Input ports → their button controller ID
- *  - Gate outputs → their gate controller ID
- *  - Feedback mappings → target input name → source gate controller ID
- */
 function buildSignalMap(
   circuit: CircuitDefinition,
-  placements: GatePlacement[],
+  placements: readonly PlacedComponent[],
 ): ReadonlyMap<string, number> {
   const map = new Map<string, number>();
 
-  // Index placements by gateId
-  const placementById = new Map<string, GatePlacement>();
   for (const p of placements) {
-    placementById.set(p.gateId, p);
-  }
-
-  // Input ports
-  for (const inputName of circuit.inputs) {
-    const p = placementById.get(inputName);
-    if (p !== undefined) {
-      map.set(inputName, p.controllerId);
+    // Input ports: map by name
+    if (p.isInput) {
+      map.set(p.childId, p.controllerId);
     }
   }
 
-  // Gate outputs
   for (const gate of circuit.gates) {
-    const p = placementById.get(gate.id);
+    const p = placements.find((pl) => pl.childId === gate.id);
     if (p !== undefined) {
       map.set(gate.output, p.controllerId);
     }
   }
 
-  // Feedback: source output → target input alias
   if (circuit.feedback !== undefined) {
     for (const [sourceOutput, targetInput] of Object.entries(circuit.feedback)) {
       const srcCid = map.get(sourceOutput);
@@ -303,20 +292,17 @@ function buildSignalMap(
   return map;
 }
 
-/** Serialize a position to a string key for Set lookups */
 function posKey(pos: SMVector): string {
   return `${pos.x},${pos.y},${pos.z}`;
 }
 
-/** Generate plastic block positions for empty grid cells */
 function generateFillBlocks(
-  placements: GatePlacement[],
+  placements: readonly PlacedComponent[],
   occupied: ReadonlySet<string>,
   spacing: number,
 ): SMVector[] {
   if (placements.length === 0) return [];
 
-  // Compute bounding box
   let minX = Infinity;
   let maxX = -Infinity;
   let minZ = Infinity;
@@ -342,7 +328,6 @@ function generateFillBlocks(
   return fills;
 }
 
-/** Create a plastic block blueprint item */
 function makePlasticBlock(position: SMVector, controllerId: number): SMBlueprintItem {
   const controller: SMController = {
     id: controllerId,

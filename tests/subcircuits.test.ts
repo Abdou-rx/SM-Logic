@@ -9,10 +9,11 @@ import {
   createPulseGenerator,
   getSubcircuit,
   getAvailableSubcircuits,
+  circuitFromJson,
+  circuitToJson,
 } from '../src/core/subcircuits.ts';
-import { CircuitBuilder, circuitFromJson, circuitToJson } from '../src/core/circuit-builder.ts';
+import { CircuitBuilder } from '../src/core/circuit-builder.ts';
 import { SimulationEngine } from '../src/simulator/engine.ts';
-import { TIMING } from '../src/core/constants.ts';
 
 describe('Subcircuits', () => {
   describe('NOT gate', () => {
@@ -79,7 +80,6 @@ describe('Subcircuits', () => {
     it('produces correct outputs for all input combinations', () => {
       const circuit = createFullAdder();
 
-      // Test a few representative cases
       const tests: Array<[boolean, boolean, boolean, boolean, boolean]> = [
         [false, false, false, false, false],
         [true, false, false, true, false],
@@ -199,7 +199,8 @@ describe('circuitFromJson / circuitToJson', () => {
     const json = circuitToJson(original);
     const restored = circuitFromJson(json);
 
-    expect(Object.keys(restored.feedback)).toEqual(Object.keys(original.feedback));
+    // SR latch has no explicit feedback field (direct cross-coupling)
+    expect(restored.feedback).toEqual(original.feedback);
   });
 });
 

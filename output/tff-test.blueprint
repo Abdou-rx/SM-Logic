@@ -1,0 +1,285 @@
+{
+  "version": 4,
+  "bodies": [
+    {
+      "childs": [
+        {
+          "pos": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "shapeId": "1e8d93a4-506b-470d-9ada-9c0a321e2db5",
+          "xaxis": {
+            "x": 1,
+            "y": 0,
+            "z": 0,
+            "w": 0
+          },
+          "zaxis": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 0
+          },
+          "controller": {
+            "id": 1,
+            "active": true,
+            "controllers": []
+          },
+          "joints": []
+        },
+        {
+          "pos": {
+            "x": 1,
+            "y": 0,
+            "z": 0
+          },
+          "shapeId": "9f0f56e8-2c31-4d83-996c-d00a9b296c3f",
+          "xaxis": {
+            "x": 1,
+            "y": 0,
+            "z": 0,
+            "w": 0
+          },
+          "zaxis": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 0
+          },
+          "controller": {
+            "id": 2,
+            "controllers": [
+              {
+                "id": 1
+              }
+            ],
+            "mode": 1
+          },
+          "joints": []
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 0,
+            "z": 0
+          },
+          "shapeId": "9f0f56e8-2c31-4d83-996c-d00a9b296c3f",
+          "xaxis": {
+            "x": 1,
+            "y": 0,
+            "z": 0,
+            "w": 0
+          },
+          "zaxis": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 0
+          },
+          "controller": {
+            "id": 3,
+            "controllers": [
+              {
+                "id": 2
+              }
+            ],
+            "mode": 3
+          },
+          "joints": []
+        },
+        {
+          "pos": {
+            "x": 3,
+            "y": 0,
+            "z": 0
+          },
+          "shapeId": "9f0f56e8-2c31-4d83-996c-d00a9b296c3f",
+          "xaxis": {
+            "x": 1,
+            "y": 0,
+            "z": 0,
+            "w": 0
+          },
+          "zaxis": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 0
+          },
+          "controller": {
+            "id": 4,
+            "controllers": [
+              {
+                "id": 3
+              }
+            ],
+            "mode": 0
+          },
+          "joints": []
+        },
+        {
+          "pos": {
+            "x": 4,
+            "y": 0,
+            "z": 0
+          },
+          "shapeId": "9f0f56e8-2c31-4d83-996c-d00a9b296c3f",
+          "xaxis": {
+            "x": 1,
+            "y": 0,
+            "z": 0,
+            "w": 0
+          },
+          "zaxis": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 0
+          },
+          "controller": {
+            "id": 5,
+            "controllers": [
+              {
+                "id": 4
+              },
+              {
+                "id": 5
+              }
+            ],
+            "mode": 2
+          },
+          "joints": []
+        },
+        {
+          "pos": {
+            "x": 5,
+            "y": 0,
+            "z": 0
+          },
+          "shapeId": "9f0f56e8-2c31-4d83-996c-d00a9b296c3f",
+          "xaxis": {
+            "x": 1,
+            "y": 0,
+            "z": 0,
+            "w": 0
+          },
+          "zaxis": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 0
+          },
+          "controller": {
+            "id": 6,
+            "controllers": [
+              {
+                "id": 5
+              },
+              {
+                "id": 4
+              }
+            ],
+            "mode": 2
+          },
+          "joints": []
+        },
+        {
+          "pos": {
+            "x": 6,
+            "y": 0,
+            "z": 0
+          },
+          "shapeId": "9f0f56e8-2c31-4d83-996c-d00a9b296c3f",
+          "xaxis": {
+            "x": 1,
+            "y": 0,
+            "z": 0,
+            "w": 0
+          },
+          "zaxis": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 0
+          },
+          "controller": {
+            "id": 7,
+            "controllers": [
+              {
+                "id": 6
+              },
+              {
+                "id": 4
+              }
+            ],
+            "mode": 2
+          },
+          "joints": []
+        },
+        {
+          "pos": {
+            "x": 7,
+            "y": 0,
+            "z": 0
+          },
+          "shapeId": "9f0f56e8-2c31-4d83-996c-d00a9b296c3f",
+          "xaxis": {
+            "x": 1,
+            "y": 0,
+            "z": 0,
+            "w": 0
+          },
+          "zaxis": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 0
+          },
+          "controller": {
+            "id": 8,
+            "controllers": [
+              {
+                "id": 5
+              }
+            ],
+            "mode": 4
+          },
+          "joints": []
+        },
+        {
+          "pos": {
+            "x": 8,
+            "y": 0,
+            "z": 0
+          },
+          "shapeId": "628b2d61-5ceb-43e9-8334-a4135566df7a",
+          "xaxis": {
+            "x": 1,
+            "y": 0,
+            "z": 0,
+            "w": 0
+          },
+          "zaxis": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 0
+          },
+          "controller": {
+            "id": 9,
+            "controllers": [
+              {
+                "id": 8
+              }
+            ]
+          },
+          "joints": []
+        }
+      ]
+    }
+  ],
+  "joints": [],
+  "dependencies": []
+}

@@ -421,53 +421,31 @@ export class SimulationEngine {
       node.state.currentState = timer.tick(inputValue);
     }
 
-    // 5. Feedback loops: iterate until stable (max iterations)
-    for (let iter = 0; iter < MAX_FEEDBACK_ITERATIONS; iter++) {
-      let anyChanged = false;
-
-      for (const gateId of this.resolution.cycleGateIds) {
-        const node = this.resolution.resolved.nodes.get(gateId);
-        if (node === undefined || node.type === "timer" || node.type === "input") {
-          continue;
-        }
-
-        const gate = this.resolution.gateById.get(gateId);
-        if (gate === undefined) continue;
-
-        // Read from current state for cycle resolution
-        const inputValues: boolean[] = [];
-        for (const inputSig of gate.inputs) {
-          const srcGateId = this.resolution.signalToGateId.get(inputSig);
-          if (srcGateId !== undefined) {
-            const srcNode = this.resolution.resolved.nodes.get(srcGateId);
-            inputValues.push(srcNode?.state.currentState ?? false);
-          } else {
-            // Circuit input or feedback signal
-            inputValues.push(
-              this.inputValues.get(inputSig) ??
-                this.feedbackValues.get(inputSig) ??
-                false,
-            );
-          }
-        }
-
-        if (isLogicGateType(node.type)) {
-          const result = evaluateGateFromInputs(node.type, inputValues);
-          if (result !== node.state.currentState) {
-            node.state.currentState = result;
-            anyChanged = true;
-          }
-        } else if (node.type === "output") {
-          // Output gate: passthrough from input
-          const result = inputValues[0] ?? false;
-          if (result !== node.state.currentState) {
-            node.state.currentState = result;
-            anyChanged = true;
-          }
-        }
+    // 5. Feedback/cycle gates: evaluate using PREVIOUS tick state (1-tick delay per gate).
+    // In Scrap Mechanic, every gate reads from the previous tick, including gates in
+    // feedback loops. This avoids oscillation in cross-coupled circuits (e.g. SR latches).
+    // We run multiple iterations only to handle multi-level feedback chains that need
+    // more than one pass to propagate through the previous-tick state.
+    for (const gateId of this.resolution.cycleGateIds) {
+      const node = this.resolution.resolved.nodes.get(gateId);
+      if (node === undefined || node.type === "timer" || node.type === "input") {
+        continue;
       }
 
-      if (!anyChanged) break;
+      const gate = this.resolution.gateById.get(gateId);
+      if (gate === undefined) continue;
+
+      // Read from PREVIOUS state (signalPrev map) for SM-accurate 1-tick delay
+      if (isLogicGateType(node.type)) {
+        const inputValues: boolean[] = [];
+        for (const inputSig of gate.inputs) {
+          inputValues.push(signalPrev.get(inputSig) ?? false);
+        }
+        node.state.currentState = evaluateGateFromInputs(node.type, inputValues);
+      } else if (node.type === "output") {
+        const inputSig = gate.inputs[0];
+        node.state.currentState = signalPrev.get(inputSig ?? "") ?? false;
+      }
     }
 
     // Apply explicit feedback mappings (from circuit.feedback)
