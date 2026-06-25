@@ -95,6 +95,8 @@ export class TruthTableGenerator {
 
   /**
    * Check if the circuit is sequential (has timers or feedback loops).
+   * Detects both explicit feedback (circuit.feedback field) and implicit
+   * feedback cycles in the gate dependency graph.
    */
   isSequential(): boolean {
     if (this.circuit.gates.some((g) => g.type === "timer")) return true;
@@ -103,6 +105,52 @@ export class TruthTableGenerator {
       Object.keys(this.circuit.feedback).length > 0
     )
       return true;
+
+    // Detect implicit feedback: build gate dependency graph and check for cycles
+    const outputToGateId = new Map<string, string>();
+    for (const gate of this.circuit.gates) {
+      outputToGateId.set(gate.output, gate.id);
+    }
+
+    // adjacency: gateId → set of gateIds it depends on (sources)
+    const deps = new Map<string, Set<string>>();
+    for (const gate of this.circuit.gates) {
+      const gateDeps = new Set<string>();
+      for (const inputSig of gate.inputs) {
+        const srcId = outputToGateId.get(inputSig);
+        if (srcId !== undefined && srcId !== gate.id) {
+          gateDeps.add(srcId);
+        }
+      }
+      deps.set(gate.id, gateDeps);
+    }
+
+    // Recursive DFS cycle detection
+    const WHITE = 0;
+    const GRAY = 1;
+    const BLACK = 2;
+    const color = new Map<string, number>();
+    for (const gate of this.circuit.gates) {
+      color.set(gate.id, WHITE);
+    }
+
+    const detectCycle = (node: string): boolean => {
+      color.set(node, GRAY);
+      for (const depId of deps.get(node) ?? []) {
+        const depColor = color.get(depId) ?? WHITE;
+        if (depColor === GRAY) return true;
+        if (depColor === WHITE && detectCycle(depId)) return true;
+      }
+      color.set(node, BLACK);
+      return false;
+    };
+
+    for (const gate of this.circuit.gates) {
+      if ((color.get(gate.id) ?? WHITE) === WHITE) {
+        if (detectCycle(gate.id)) return true;
+      }
+    }
+
     return false;
   }
 

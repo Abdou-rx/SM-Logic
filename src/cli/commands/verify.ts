@@ -66,8 +66,13 @@ async function runVerify(filePath: string, options: VerifyOptions): Promise<void
 
   // Truth table generation
   if (options.truthTable || !options.testVectors) {
-    info("Generating truth table...");
     const ttGen = new TruthTableGenerator(circuit);
+    if (ttGen.isSequential()) {
+      warn(
+        "Circuit has feedback loops (sequential). Truth table shows cold-start behavior only — sequential state is not captured.",
+      );
+    }
+    info("Generating truth table...");
 
     if (ttGen.canGenerateFull()) {
       if (ttGen.shouldWarnSize()) {

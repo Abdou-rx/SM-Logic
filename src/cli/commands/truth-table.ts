@@ -66,6 +66,12 @@ async function runTruthTable(
 
     const ttGen = new TruthTableGenerator(circuit);
 
+    if (ttGen.isSequential()) {
+      warn(
+        "Circuit has feedback loops (sequential). Truth table shows cold-start behavior only — sequential state is not captured.",
+      );
+    }
+
     if (!ttGen.canGenerateFull()) {
       warn(
         `Circuit has ${circuit.inputs.length} inputs — using sampled verification (${Math.min(64, 1 << 6)} samples)`,
