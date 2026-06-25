@@ -1,19 +1,20 @@
 {
   "name": "t_flipflop",
-  "description": "Toggle flip-flop: each pulse on T toggles Q output",
-  "version": "1.0.0",
+  "description": "Self-oscillating T flip-flop: Q toggles repeatedly while T is held high. SM-accurate design with NOT+timer internal oscillator, timer edge detection, gated clock, and NOR SR latch with cold-start fix (NOT(T) forces Q=0 when T=0). When T=0, Q resets to 0 and stays. When T=1, the internal oscillator generates clock pulses and Q toggles on each rising edge.",
+  "version": "3.0.0",
   "inputs": ["T"],
-  "outputs": ["Q"],
+  "outputs": ["Q", "CLK"],
   "gates": [
-    { "id": "or1", "type": "or", "inputs": ["T"], "output": "or1_out" },
-    { "id": "nand1", "type": "nand", "inputs": ["or1_out"], "output": "nand1_out" },
-    { "id": "and1", "type": "and", "inputs": ["nand1_out"], "output": "and1_out" },
-    { "id": "xor1", "type": "xor", "inputs": ["and1_out", "xor3_out"], "output": "xor1_out" },
-    { "id": "xor2", "type": "xor", "inputs": ["xor1_out", "and1_out"], "output": "xor2_out" },
-    { "id": "xor3", "type": "xor", "inputs": ["xor2_out", "and1_out"], "output": "xor3_out" },
-    { "id": "nor1", "type": "nor", "inputs": ["xor1_out"], "output": "Q" }
-  ],
-  "feedback": {
-    "xor1_out": "xor3_out"
-  }
+    { "id": "osc_not", "type": "nand", "inputs": ["osc", "osc"], "output": "osc_inv" },
+    { "id": "osc_timer", "type": "timer", "delay": 2, "inputs": ["osc_inv"], "output": "osc" },
+    { "id": "osc_del", "type": "timer", "delay": 1, "inputs": ["osc"], "output": "osc_d" },
+    { "id": "not_od", "type": "nand", "inputs": ["osc_d", "osc_d"], "output": "osc_d_bar" },
+    { "id": "clk_rise", "type": "and", "inputs": ["osc", "osc_d_bar"], "output": "osc_edge" },
+    { "id": "gated", "type": "and", "inputs": ["osc_edge", "T"], "output": "CLK" },
+    { "id": "not_t", "type": "nand", "inputs": ["T", "T"], "output": "T_bar" },
+    { "id": "set_g", "type": "and", "inputs": ["CLK", "Q_bar"], "output": "S" },
+    { "id": "rst_g", "type": "and", "inputs": ["CLK", "Q"], "output": "R" },
+    { "id": "nor1", "type": "nor", "inputs": ["R", "T_bar", "Q_bar"], "output": "Q" },
+    { "id": "nor2", "type": "nor", "inputs": ["S", "Q"], "output": "Q_bar" }
+  ]
 }

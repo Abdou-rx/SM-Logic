@@ -96,13 +96,15 @@ export function createDelayLine(ticks: number = 5): CircuitDefinition {
   return builder.build();
 }
 
-export function createPulseGenerator(_delay?: number): CircuitDefinition {
+export function createPulseGenerator(delay?: number): CircuitDefinition {
+  const d = delay ?? 1;
   return circuit("pulse_gen")
-    .description("Rising-edge pulse generator")
+    .description(`Rising-edge pulse generator (timer delay=${d})`)
     .input("IN")
     .output("PULSE")
-    .timer("t1", 1, "IN", "delayed_in")
-    .gate("xor1", "xor", ["IN", "delayed_in"], "PULSE")
+    .timer("t1", d, "IN", "IN_d")
+    .gate("not_d", "nand", ["IN_d", "IN_d"], "IN_d_bar")
+    .gate("rise", "and", ["IN", "IN_d_bar"], "PULSE")
     .build();
 }
 
@@ -180,69 +182,65 @@ const LIBRARY: readonly SubcircuitInfo[] = Object.freeze([
   {
     id: "t-flipflop",
     name: "T Flip-Flop (Toggle)",
-    description: "Toggle flip-flop: each pulse on T toggles Q. Uses XOR storage loop.",
-    gateCount: 6,
+    description: "Toggle flip-flop: Q toggles on each rising edge of T. Uses timer-based edge detection and XOR toggle with feedback. Connect T to a clock source (alternating 0/1 signal). Cold start: Q=0.",
+    gateCount: 4,
     category: "memory",
     build: () =>
       circuit("t_flipflop")
-        .description("T flip-flop (toggle)")
+        .description("T flip-flop: Q toggles on each rising edge of T (clock input)")
         .input("T")
         .output("Q")
-        .gate("or1", "or", ["T"], "or1_out")
-        .gate("nand1", "nand", ["or1_out"], "nand1_out")
-        .gate("and1", "and", ["nand1_out"], "and1_out")
-        .gate("xor1", "xor", ["and1_out", "xor3_out"], "xor1_out")
-        .gate("xor2", "xor", ["xor1_out", "and1_out"], "xor2_out")
-        .gate("xor3", "xor", ["xor2_out", "and1_out"], "xor3_out")
-        .gate("nor1", "nor", ["xor1_out"], "Q")
-        .feedback({ xor1_out: "xor3_out" })
+        .timer("t_del", 1, "T", "T_d")
+        .gate("not_td", "nand", ["T_d", "T_d"], "T_d_bar")
+        .gate("pulse", "and", ["T", "T_d_bar"], "edge")
+        .gate("toggle", "xor", ["Q_fb", "edge"], "Q")
+        .feedback({ Q: "Q_fb" })
         .build(),
   },
   {
     id: "d-flipflop",
     name: "D Flip-Flop (Edge-Triggered)",
-    description: "Edge-triggered D flip-flop with data input D and clock CLK.",
-    gateCount: 6,
+    description: "Edge-triggered D flip-flop: Q captures D on rising CLK edge, holds otherwise. Uses timer-based edge detection, MUX (AND/OR), and timer storage element. Cold start: Q=0.",
+    gateCount: 7,
     category: "memory",
     build: () =>
       circuit("d_flipflop")
-        .description("D flip-flop (edge-triggered)")
+        .description("D flip-flop: Q captures D on rising edge of CLK")
         .input("D")
         .input("CLK")
         .output("Q")
-        .gate("cinv", "nor", ["CLK"], "clk_inv")
-        .gate("filt", "and", ["CLK", "clk_inv"], "clk_pulse")
-        .gate("xlp0", "xor", ["d_mux", "xlp2_out"], "xlp0_out")
-        .gate("xlp1", "xor", ["xlp0_out", "d_mux"], "xlp1_out")
-        .gate("xlp2", "xor", ["xlp1_out", "d_mux"], "xlp2_out")
-        .gate("diff", "xor", ["D", "xlp0_out"], "d_mux")
-        .feedback({ xlp0_out: "xlp2_out", xlp1_out: "d_mux" })
+        .timer("clk_del", 1, "CLK", "clk_d")
+        .gate("not_cd", "nand", ["clk_d", "clk_d"], "clk_d_bar")
+        .gate("edge", "and", ["CLK", "clk_d_bar"], "clk_rise")
+        .gate("not_edge", "nand", ["clk_rise", "clk_rise"], "clk_rise_bar")
+        .gate("d_gate", "and", ["D", "clk_rise"], "d_pass")
+        .gate("q_gate", "and", ["Q", "clk_rise_bar"], "q_hold")
+        .gate("mux", "or", ["d_pass", "q_hold"], "q_next")
+        .timer("q_store", 1, "q_next", "Q")
         .build(),
   },
   {
     id: "clock",
-    name: "Repeating Timer / Clock",
-    description: "Continuous clock oscillator: Timer + AND + NOR in triangle loop.",
-    gateCount: 3,
+    name: "NOR Oscillator / Clock",
+    description: "Simple NOR gate self-oscillator. ENABLE=0 runs at 50% duty cycle (period 2 ticks). ENABLE=1 stops clock (CLK held LOW). 1 gate.",
+    gateCount: 1,
     category: "timing",
     build: () =>
       circuit("clock")
-        .description("Repeating timer clock oscillator")
+        .description("NOR self-oscillator clock")
         .input("ENABLE")
         .output("CLK")
-        .timer("t1", 10, "and1_out", "t1_out")
-        .gate("and1", "and", ["ENABLE", "t1_out"], "and1_out")
-        .gate("nor1", "nor", ["and1_out"], "nor1_out")
-        .feedback({ and1_out: "t1_input", nor1_out: "t1_input" })
+        .gate("osc", "nor", ["CLK_fb", "ENABLE"], "CLK")
+        .feedback({ CLK: "CLK_fb" })
         .build(),
   },
   {
     id: "pulse-generator",
     name: "Pulse Generator (Rising Edge)",
-    description: "Generates a 1-tick pulse on the rising edge of input.",
-    gateCount: 2,
+    description: "Generates a pulse on the rising edge of input using timer-based edge detection.",
+    gateCount: 3,
     category: "timing",
-    build: () => createPulseGenerator(),
+    build: () => createPulseGenerator(1),
   },
   {
     id: "delay-line",
